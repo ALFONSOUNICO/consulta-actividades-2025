@@ -1,4 +1,1 @@
-streamlit
-pandas
-openpyxl
-plotly
+"streamlit\npandas\nplotly\nseaborn\nmatplotlib" 

@@ -59,6 +59,8 @@ t = texts[lang]
 st.set_page_config(page_title=t["title"], layout="wide")
 st.title(t["title"])
 
+st.image("banner.png", use_column_width=True)
+
 # Leer datos desde Google Sheets
 sheet_id = "10rYgKcSGsMTq2F2-vh0SxWQNIQ7OVjKS"
 sheet_name = "Enero 2025"

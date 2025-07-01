@@ -1,3 +1,4 @@
+!Banner del proyecto
 # Consulta de Actividades 2025
 
 Aplicación interactiva desarrollada con **Streamlit** para consultar, visualizar y analizar actividades registradas durante el año 2025.

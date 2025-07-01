@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import re
+from collections import Counter
 from urllib.parse import quote
 
 # Configuración de idioma
@@ -19,7 +21,8 @@ texts = {
         "timeline": "📈 Línea de tiempo de atenciones",
         "monthly": "📊 Atenciones por mes",
         "weekly_summary": "🧠 Resumen semanal",
-        "monthly_summary": "🧠 Resumen mensual"
+        "monthly_summary": "🧠 Resumen mensual",
+        "filter_tags": "Filtrar por etiquetas frecuentes"
     },
     "English": {
         "title": "2025 Activities Query",
@@ -32,7 +35,8 @@ texts = {
         "timeline": "📈 Attention timeline",
         "monthly": "📊 Monthly attentions",
         "weekly_summary": "🧠 Weekly summary",
-        "monthly_summary": "🧠 Monthly summary"
+        "monthly_summary": "🧠 Monthly summary",
+        "filter_tags": "Filter by frequent tags"
     }
 }
 
@@ -56,12 +60,26 @@ def load_data(url):
 
 df = load_data(url)
 
+# Unificamos texto y generamos etiquetas
+text_data = df['atencion'].fillna('') + ' ' + df['solucion'].fillna('')
+words = re.findall(r'\b\w{4,}\b', ' '.join(text_data).lower())
+word_counts = Counter(words)
+top_keywords = [word for word, count in word_counts.most_common(30)]
+
+def etiquetar_fila(texto, etiquetas):
+    texto = texto.lower()
+    return [etiqueta for etiqueta in etiquetas if etiqueta in texto]
+
+df['etiquetas'] = text_data.apply(lambda x: etiquetar_fila(x, top_keywords))
+etiquetas_unicas = sorted(set(etiqueta for lista in df['etiquetas'] for etiqueta in lista))
+
 # Filtros
 st.sidebar.header("🔍 Filtros")
 fecha_inicio = st.sidebar.date_input(t["date_start"], value=pd.to_datetime("2025-01-01"))
 fecha_fin = st.sidebar.date_input(t["date_end"], value=pd.to_datetime("2025-12-31"))
 palabra_atencion = st.sidebar.text_input(t["search_attention"])
 palabra_solucion = st.sidebar.text_input(t["search_solution"])
+etiqueta_seleccionada = st.sidebar.multiselect(t["filter_tags"], options=etiquetas_unicas)
 
 # Aplicar filtros
 df_filtrado = df[
@@ -74,6 +92,9 @@ if palabra_atencion:
 
 if palabra_solucion:
     df_filtrado = df_filtrado[df_filtrado['solucion'].str.contains(palabra_solucion, case=False, na=False)]
+
+if etiqueta_seleccionada:
+    df_filtrado = df_filtrado[df_filtrado['etiquetas'].apply(lambda etiquetas: any(e in etiquetas for e in etiqueta_seleccionada))]
 
 # Mostrar resultados
 st.subheader(t["results"])
@@ -92,28 +113,24 @@ st.download_button(
     mime='text/csv',
 )
 
-# Gráfico de línea de tiempo
+# Visualizaciones
 if not df_filtrado.empty:
     st.subheader(t["timeline"])
     timeline = df_filtrado.groupby('fecha').size().reset_index(name='conteo')
     fig_timeline = px.line(timeline, x='fecha', y='conteo', markers=True)
     st.plotly_chart(fig_timeline, use_container_width=True)
 
-    # Gráfico mensual
     st.subheader(t["monthly"])
     df_filtrado['mes'] = df_filtrado['fecha'].dt.to_period('M').astype(str)
     mensual = df_filtrado.groupby('mes').size().reset_index(name='conteo')
     fig_mensual = px.bar(mensual, x='mes', y='conteo')
     st.plotly_chart(fig_mensual, use_container_width=True)
 
-    # Resumen semanal
     st.subheader(t["weekly_summary"])
     df_filtrado['semana'] = df_filtrado['fecha'].dt.to_period('W').astype(str)
     resumen_semana = df_filtrado.groupby('semana').size().reset_index(name='conteo')
     st.dataframe(resumen_semana)
 
-    # Resumen mensual
     st.subheader(t["monthly_summary"])
     resumen_mes = df_filtrado.groupby('mes').size().reset_index(name='conteo')
     st.dataframe(resumen_mes)
-

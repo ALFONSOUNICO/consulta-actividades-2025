@@ -59,15 +59,15 @@ sheet_name = "Enero 2025"
 encoded_sheet_name = quote(sheet_name)
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={encoded_sheet_name}"
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=30)
 def load_data(url):
     df = pd.read_csv(url)
     df.columns = [col.strip().lower() for col in df.columns]
     df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce', dayfirst=True)
     return df
 
-# Botón para recargar datos
-if st.sidebar.button(t["reload"]):
+# Botón para recargar datos (visible en sidebar y cuerpo principal)
+if st.sidebar.button(t["reload"]) or st.button(t["reload"]):
     st.cache_data.clear()
     st.experimental_rerun()
 

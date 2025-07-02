@@ -22,7 +22,8 @@ texts = {
         "monthly": "📊 Atenciones por mes",
         "weekly_summary": "🧠 Resumen semanal",
         "monthly_summary": "🧠 Resumen mensual",
-        "filter_tags": "Filtrar por etiquetas frecuentes"
+        "filter_tags": "Filtrar por etiquetas frecuentes",
+        "reload": "🔄 Recargar datos"
     },
     "English": {
         "title": "2025 Activities Query",
@@ -36,7 +37,8 @@ texts = {
         "monthly": "📊 Monthly attentions",
         "weekly_summary": "🧠 Weekly summary",
         "monthly_summary": "🧠 Monthly summary",
-        "filter_tags": "Filter by frequent tags"
+        "filter_tags": "Filter by frequent tags",
+        "reload": "🔄 Reload data"
     }
 }
 
@@ -57,12 +59,17 @@ sheet_name = "Enero 2025"
 encoded_sheet_name = quote(sheet_name)
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={encoded_sheet_name}"
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_data(url):
     df = pd.read_csv(url)
     df.columns = [col.strip().lower() for col in df.columns]
     df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce', dayfirst=True)
     return df
+
+# Botón para recargar datos
+if st.sidebar.button(t["reload"]):
+    st.cache_data.clear()
+    st.experimental_rerun()
 
 df = load_data(url)
 
@@ -145,4 +152,3 @@ if not df_filtrado.empty:
     resumen_mes = df_filtrado.groupby('mes').size().reset_index(name='conteo')
     with st.expander(t["monthly_summary"]):
         st.dataframe(resumen_mes)
-

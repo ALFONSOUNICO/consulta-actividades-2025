@@ -45,8 +45,11 @@ t = texts[lang]
 st.set_page_config(page_title=t["title"], layout="centered")
 st.title(t["title"])
 
-# Mostrar banner
-st.image("banner.png", use_container_width=True)
+# Mostrar banner si existe
+try:
+    st.image("banner.png", use_container_width=True)
+except:
+    pass
 
 # Leer datos desde Google Sheets
 sheet_id = "10rYgKcSGsMTq2F2-vh0SxWQNIQ7OVjKS"
@@ -101,7 +104,10 @@ if etiqueta_seleccionada:
 
 # Mostrar resultados
 st.subheader(t["results"])
-st.dataframe(df_filtrado)
+st.dataframe(df_filtrado.head(10))
+
+with st.expander("Ver todos los resultados"):
+    st.dataframe(df_filtrado)
 
 # Descargar CSV
 @st.cache_data
@@ -129,11 +135,14 @@ if not df_filtrado.empty:
     fig_mensual = px.bar(mensual, x='mes', y='conteo')
     st.plotly_chart(fig_mensual, use_container_width=True)
 
+    st.subheader(t["weekly_summary"])
+    df_filtrado['semana'] = df_filtrado['fecha'].dt.to_period('W').astype(str)
+    resumen_semana = df_filtrado.groupby('semana').size().reset_index(name='conteo')
     with st.expander(t["weekly_summary"]):
-        df_filtrado['semana'] = df_filtrado['fecha'].dt.to_period('W').astype(str)
-        resumen_semana = df_filtrado.groupby('semana').size().reset_index(name='conteo')
         st.dataframe(resumen_semana)
 
+    st.subheader(t["monthly_summary"])
+    resumen_mes = df_filtrado.groupby('mes').size().reset_index(name='conteo')
     with st.expander(t["monthly_summary"]):
-        resumen_mes = df_filtrado.groupby('mes').size().reset_index(name='conteo')
         st.dataframe(resumen_mes)
+

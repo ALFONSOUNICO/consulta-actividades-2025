@@ -69,7 +69,7 @@ def load_data(url):
 # Botón para recargar datos (visible en sidebar y cuerpo principal)
 if st.sidebar.button(t["reload"]) or st.button(t["reload"]):
     st.cache_data.clear()
-    st.experimental_rerun()
+    st.rerun()
 
 df = load_data(url)
 

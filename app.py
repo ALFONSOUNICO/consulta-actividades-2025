@@ -101,7 +101,7 @@ if etiqueta_seleccionada:
 
 # Mostrar resultados
 st.subheader(t["results"])
-st.dataframe(df_filtrado.head(10))
+st.dataframe(df_filtrado)
 
 # Descargar CSV
 @st.cache_data

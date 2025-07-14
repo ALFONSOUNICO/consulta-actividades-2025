@@ -4,6 +4,9 @@ import plotly.express as px
 import re
 from collections import Counter
 from urllib.parse import quote
+from fpdf import FPDF
+import tempfile
+import os
 
 # Configuración de idioma
 lang = st.sidebar.selectbox("🌐 Language / Idioma", ["Español", "English"])
@@ -23,7 +26,8 @@ texts = {
         "weekly_summary": "🧠 Resumen semanal",
         "monthly_summary": "🧠 Resumen mensual",
         "filter_tags": "Filtrar por etiquetas frecuentes",
-        "reload": "🔄 Recargar datos"
+        "reload": "🔄 Recargar datos",
+        "download_pdf": "📄 Descargar informe PDF"
     },
     "English": {
         "title": "2025 Activities Query",
@@ -38,7 +42,8 @@ texts = {
         "weekly_summary": "🧠 Weekly summary",
         "monthly_summary": "🧠 Monthly summary",
         "filter_tags": "Filter by frequent tags",
-        "reload": "🔄 Reload data"
+        "reload": "🔄 Reload data",
+        "download_pdf": "📄 Download PDF report"
     }
 }
 
@@ -66,7 +71,7 @@ def load_data(url):
     df['fecha'] = pd.to_datetime(df['fecha'], errors='coerce', dayfirst=True)
     return df
 
-# Botón para recargar datos (visible en sidebar y cuerpo principal)
+# Botón para recargar datos
 if st.sidebar.button(t["reload"]) or st.button(t["reload"]):
     st.cache_data.clear()
     st.rerun()
@@ -130,6 +135,7 @@ st.download_button(
 )
 
 # Visualizaciones
+timeline_path = mensual_path = None
 if not df_filtrado.empty:
     st.subheader(t["timeline"])
     timeline = df_filtrado.groupby('fecha').size().reset_index(name='conteo')
@@ -142,13 +148,48 @@ if not df_filtrado.empty:
     fig_mensual = px.bar(mensual, x='mes', y='conteo')
     st.plotly_chart(fig_mensual, use_container_width=True)
 
-    st.subheader(t["weekly_summary"])
-    df_filtrado['semana'] = df_filtrado['fecha'].dt.to_period('W').astype(str)
-    resumen_semana = df_filtrado.groupby('semana').size().reset_index(name='conteo')
-    with st.expander(t["weekly_summary"]):
-        st.dataframe(resumen_semana)
+    # Guardar gráficos como imágenes temporales
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f1:
+        fig_timeline.write_image(f1.name)
+        timeline_path = f1.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f2:
+        fig_mensual.write_image(f2.name)
+        mensual_path = f2.name
 
-    st.subheader(t["monthly_summary"])
-    resumen_mes = df_filtrado.groupby('mes').size().reset_index(name='conteo')
-    with st.expander(t["monthly_summary"]):
-        st.dataframe(resumen_mes)
+    # Generar PDF
+    def generar_pdf(df, fig_timeline_path, fig_mensual_path):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, "Informe de Actividades 2025", ln=True, align='C')
+
+        pdf.set_font("Arial", '', 12)
+        pdf.ln(10)
+        pdf.cell(0, 10, "Línea de tiempo de atenciones:", ln=True)
+        pdf.image(fig_timeline_path, w=180)
+        pdf.ln(10)
+
+        pdf.cell(0, 10, "Atenciones por mes:", ln=True)
+        pdf.image(fig_mensual_path, w=180)
+        pdf.ln(10)
+
+        pdf.cell(0, 10, "Resumen de datos:", ln=True)
+        pdf.ln(5)
+
+        for index, row in df.iterrows():
+            texto = f"{row['fecha'].strftime('%Y-%m-%d')} - {row['atencion']} - {row['solucion']}"
+            pdf.multi_cell(0, 10, texto)
+
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        pdf.output(temp_file.name)
+        return temp_file.name
+
+    pdf_path = generar_pdf(df_filtrado, timeline_path, mensual_path)
+
+    with open(pdf_path, "rb") as f:
+        st.download_button(
+            label=t["download_pdf"],
+            data=f,
+            file_name="informe_actividades_2025.pdf",
+            mime="application/pdf"
+        )

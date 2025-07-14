@@ -1,7 +1,7 @@
 streamlit
 pandas
-plotly
-fpdf
+plotly>=5.5.0
 kaleido
+fpdf
 seaborn
 matplotlib

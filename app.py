@@ -6,7 +6,6 @@ from collections import Counter
 from urllib.parse import quote
 from fpdf import FPDF
 import tempfile
-import os
 
 # Configuración de idioma
 lang = st.sidebar.selectbox("🌐 Language / Idioma", ["Español", "English"])
@@ -134,8 +133,7 @@ st.download_button(
     mime='text/csv',
 )
 
-# Visualizaciones
-timeline_path = mensual_path = None
+# Visualizaciones interactivas
 if not df_filtrado.empty:
     st.subheader(t["timeline"])
     timeline = df_filtrado.groupby('fecha').size().reset_index(name='conteo')
@@ -148,16 +146,8 @@ if not df_filtrado.empty:
     fig_mensual = px.bar(mensual, x='mes', y='conteo')
     st.plotly_chart(fig_mensual, use_container_width=True)
 
-    # Guardar gráficos como imágenes temporales
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f1:
-        fig_timeline.write_image(f1.name)
-        timeline_path = f1.name
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f2:
-        fig_mensual.write_image(f2.name)
-        mensual_path = f2.name
-
-    # Generar PDF
-    def generar_pdf(df, fig_timeline_path, fig_mensual_path):
+    # Generar PDF sin imágenes
+    def generar_pdf(df):
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", 'B', 16)
@@ -165,14 +155,6 @@ if not df_filtrado.empty:
 
         pdf.set_font("Arial", '', 12)
         pdf.ln(10)
-        pdf.cell(0, 10, "Línea de tiempo de atenciones:", ln=True)
-        pdf.image(fig_timeline_path, w=180)
-        pdf.ln(10)
-
-        pdf.cell(0, 10, "Atenciones por mes:", ln=True)
-        pdf.image(fig_mensual_path, w=180)
-        pdf.ln(10)
-
         pdf.cell(0, 10, "Resumen de datos:", ln=True)
         pdf.ln(5)
 
@@ -184,7 +166,7 @@ if not df_filtrado.empty:
         pdf.output(temp_file.name)
         return temp_file.name
 
-    pdf_path = generar_pdf(df_filtrado, timeline_path, mensual_path)
+    pdf_path = generar_pdf(df_filtrado)
 
     with open(pdf_path, "rb") as f:
         st.download_button(

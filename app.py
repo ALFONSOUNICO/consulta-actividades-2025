@@ -175,7 +175,8 @@ if not df_filtrado.empty:
             file_name="informe_actividades_2025.pdf",
             mime="application/pdf"
         )
-        # =========================
+
+# =========================
 # ✏️ Sección: Editor de Datos
 # =========================
 st.subheader("✏️ Editar datos manualmente")
@@ -202,12 +203,13 @@ with st.form("edit_form"):
     solucion_edit = st.text_area("Solución", value=df.loc[row_index, 'solucion'])
     submitted = st.form_submit_button("Guardar cambios")
 
-# Aplicar cambios y permitir descarga
+# Aplicar cambios y recargar la app
 if submitted:
     df.loc[row_index, 'fecha'] = pd.to_datetime(fecha_edit)
     df.loc[row_index, 'atencion'] = atencion_edit
     df.loc[row_index, 'solucion'] = solucion_edit
     st.success("✅ Cambios guardados en memoria.")
+    st.rerun()
 
     # Descargar CSV actualizado
     csv_editado = df.to_csv(index=False).encode('utf-8')
@@ -217,4 +219,5 @@ if submitted:
         file_name="datos_actualizados.csv",
         mime="text/csv"
     )
+
 

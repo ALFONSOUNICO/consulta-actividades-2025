@@ -175,3 +175,46 @@ if not df_filtrado.empty:
             file_name="informe_actividades_2025.pdf",
             mime="application/pdf"
         )
+        # =========================
+# ✏️ Sección: Editor de Datos
+# =========================
+st.subheader("✏️ Editar datos manualmente")
+
+# Mostrar tabla con índice para referencia
+st.dataframe(df.reset_index())
+
+# Seleccionar fila a editar
+row_index = st.number_input(
+    "Selecciona el número de fila a editar",
+    min_value=0,
+    max_value=len(df) - 1,
+    step=1,
+    key="row_selector"
+)
+
+# Formulario para editar los campos
+with st.form("edit_form"):
+    fecha_edit = st.date_input(
+        "Fecha",
+        value=df.loc[row_index, 'fecha'].date() if pd.notnull(df.loc[row_index, 'fecha']) else pd.to_datetime("today").date()
+    )
+    atencion_edit = st.text_area("Atención", value=df.loc[row_index, 'atencion'])
+    solucion_edit = st.text_area("Solución", value=df.loc[row_index, 'solucion'])
+    submitted = st.form_submit_button("Guardar cambios")
+
+# Aplicar cambios y permitir descarga
+if submitted:
+    df.loc[row_index, 'fecha'] = pd.to_datetime(fecha_edit)
+    df.loc[row_index, 'atencion'] = atencion_edit
+    df.loc[row_index, 'solucion'] = solucion_edit
+    st.success("✅ Cambios guardados en memoria.")
+
+    # Descargar CSV actualizado
+    csv_editado = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="⬇️ Descargar archivo actualizado",
+        data=csv_editado,
+        file_name="datos_actualizados.csv",
+        mime="text/csv"
+    )
+

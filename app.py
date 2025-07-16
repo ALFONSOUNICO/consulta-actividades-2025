@@ -210,14 +210,3 @@ if submitted:
     df.loc[row_index, 'solucion'] = solucion_edit
     st.success("✅ Cambios guardados en memoria.")
     st.rerun()
-
-    # Descargar CSV actualizado
-    csv_editado = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Descargar archivo actualizado",
-        data=csv_editado,
-        file_name="datos_actualizados.csv",
-        mime="text/csv"
-    )
-
-

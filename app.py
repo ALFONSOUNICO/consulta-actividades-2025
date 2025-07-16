@@ -175,11 +175,14 @@ if not df_filtrado.empty:
             file_name="informe_actividades_2025.pdf",
             mime="application/pdf"
         )
-
 # =========================
 # ✏️ Sección: Editor de Datos
 # =========================
 st.subheader("✏️ Editar datos manualmente")
+
+# Usar datos editados si existen
+if 'df_editado' in st.session_state:
+    df = st.session_state['df_editado']
 
 # Mostrar tabla con índice para referencia
 st.dataframe(df.reset_index())
@@ -208,5 +211,6 @@ if submitted:
     df.loc[row_index, 'fecha'] = pd.to_datetime(fecha_edit)
     df.loc[row_index, 'atencion'] = atencion_edit
     df.loc[row_index, 'solucion'] = solucion_edit
+    st.session_state['df_editado'] = df
     st.success("✅ Cambios guardados en memoria.")
     st.rerun()
